@@ -1,0 +1,4 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+# sh reads a CR as part of the line
+*.sh text eol=lf

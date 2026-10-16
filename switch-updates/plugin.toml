@@ -1,0 +1,11 @@
+id = "switch-updates"
+name = "Switch Updates"
+version = "1.1.0"
+author = "capito27"
+homepage = "https://github.com/capito27/pokeldn-capito27-plugins"
+description = "Back up a Switch game's update, or its system update, and send a saved update to another console, through Match Version With Local Users. Needs the ESP32 board and prod.keys."
+api = "1.8"
+icon = "icon.png"
+library = "Switch"
+library_sort = "name"
+exclude = ["tests", "tools", "docs", "conftest.py", "pytest.ini"]

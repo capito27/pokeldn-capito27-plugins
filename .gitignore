@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pokeplugin
+*.pem
+dist/
+.pytest_cache/
+.ruff_cache/

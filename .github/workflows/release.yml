@@ -1,0 +1,140 @@
+name: Release
+# Tests every plugin folder against a pokeldn release, then, on main, releases each folder's version not yet
+# released: packed and signed with the PLUGIN_SIGNING_KEY secret, as a GitHub release <id>-<version>, and listed
+# in pokeldn-source.json. Raising `version` in a plugin.toml and pushing is a release; a push that leaves the
+# versions alone only tests. tools/publish.sh does the releasing.
+on:
+  push:
+    branches: [main]
+    paths-ignore: [pokeldn-source.json, "**.md", LICENSE]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: "Plugin folder (empty: every plugin)"
+        required: false
+        default: ""
+permissions:
+  contents: read
+env:
+  # The pokeldn the tests run against and whose scripts pack, sign and list: the oldest release the plugins
+  # support, raised with their plugin API.
+  POKELDN_REF: v0.29.1
+jobs:
+  plugins:
+    runs-on: ubuntu-24.04
+    outputs:
+      folders: ${{ steps.find.outputs.folders }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: find
+        env:
+          ONLY: ${{ inputs.plugin }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            [ -f "$ONLY/plugin.toml" ] || { echo "::error::$ONLY holds no plugin.toml"; exit 1; }
+            set -- "$ONLY"
+          else
+            set -- $(for manifest in */plugin.toml; do dirname "$manifest"; done)
+          fi
+          echo "folders=$(printf '%s\n' "$@" | jq -Rsc 'split("\n") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: plugins
+    strategy:
+      fail-fast: false
+      matrix:
+        folder: ${{ fromJSON(needs.plugins.outputs.folders) }}
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: plugins
+      - uses: actions/checkout@v7
+        with:
+          repository: Decryptu/pokeldn
+          ref: ${{ env.POKELDN_REF }}
+          path: pokeldn
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pokeldn/requirements.txt
+      - run: python -m pip install -r requirements.txt pytest==9.1.1 pillow==12.3.0
+        working-directory: pokeldn
+      - run: python -m pytest -q -W error
+        working-directory: plugins/${{ matrix.folder }}
+        env:
+          POKELDN_SOURCE: ${{ github.workspace }}/pokeldn
+
+  release:
+    needs: [plugins, test]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    # One release run at a time: each commits pokeldn-source.json.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: plugins
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: Decryptu/pokeldn
+          ref: ${{ env.POKELDN_REF }}
+          path: pokeldn
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: python -m pip install pycryptodome==3.23.0
+      - name: Signing key
+        env:
+          SIGNING_KEY: ${{ secrets.PLUGIN_SIGNING_KEY }}
+        run: |
+          [ -n "$SIGNING_KEY" ] || { echo "::error::The PLUGIN_SIGNING_KEY secret is not set (README, Publishing)"; exit 1; }
+          umask 077
+          printf '%s\n' "$SIGNING_KEY" > "$RUNNER_TEMP/signing.pem"
+          python - "$GITHUB_WORKSPACE/pokeldn" "$RUNNER_TEMP/signing.pem" >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          import base64, sys
+          sys.path.insert(0, sys.argv[1])
+          from pokeldn.app import plugin_store
+          key = plugin_store.signing_key(sys.argv[2])
+          raw = base64.b64encode(key.public_key().export_key(format="raw")).decode()
+          print(f"Packages are signed by key `{plugin_store.fingerprint(raw)}`.")
+          EOF
+      - name: Release and list
+        working-directory: plugins
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY: ${{ runner.temp }}/signing.pem
+          POKELDN: ${{ github.workspace }}/pokeldn
+          PYTHON: python
+          REPO: ${{ github.repository }}
+          TARGET: ${{ github.sha }}
+          FOLDERS: ${{ needs.plugins.outputs.folders }}
+        run: |
+          folders=$(echo "$FOLDERS" | jq -r '.[]')
+          for folder in $folders; do
+            sh tools/publish.sh "$folder"
+          done
+      - name: Commit the listing
+        working-directory: plugins
+        run: |
+          git add pokeldn-source.json
+          if git diff --cached --quiet; then
+            echo "pokeldn-source.json already lists every released version."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "List the released plugin versions in pokeldn-source.json"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:main
+      - name: Forget the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/signing.pem"
