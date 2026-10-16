@@ -333,9 +333,11 @@ def test_application_in_use_waits_for_1a():
     assert member.ready and member.name == "Switch"
 
 
-def test_guest_queries_the_game_before_joining():
+@pytest.mark.parametrize("icon", [b"icon", bytes(0x31D75)], ids=["switch", "switch 2"])
+def test_guest_queries_the_game_before_joining(icon):
+    """A Switch 2 host's icon outgrows a Switch's whole control data buffer (seen: 0x31D75 bytes)."""
     from tests.test_lcs_control import nacp
-    data = nacp("Game", "Maker", "1.0.2") + b"icon"
+    data = nacp("Game", "Maker", "1.0.2") + icon
 
     def console(sock):
         mtype, payload = c.read(sock)
@@ -347,7 +349,7 @@ def test_guest_queries_the_game_before_joining():
     a, t = scripted(console)
     control = session.query_control(a, APP)
     assert (control.name, control.publisher, control.display_version) == ("Game", "Maker", "1.0.2")
-    assert control.icon == b"icon"
+    assert control.icon == icon
     guest = session.Guest(None, B_IP, c.Join(system_info(), "pokeldn", [app_record(0x10000)]))
     guest.run(A_IP, a)
     t.finish()

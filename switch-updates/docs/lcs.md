@@ -195,7 +195,7 @@ builds. The exception is `0x01` / `0x03`, which have no sender; their layout is 
 |---|---|---|---|
 | `0x01` / `0x03` | G→H | high | **Control-data query**, `{BE u64 application ID}` (read by the host at `0x429c78` / `0x429cf8`). The host fetches `ns`'s `GetApplicationControlData` for that game (`0x432c80`) and answers `0x02` to `0x01`, `0x04` to `0x03` (`0x433330`). The dispatch has no join-state check, so it is answered before a `0x05` too. Any `ns` error aborts qlaunch (`0x433404`), so ask only for the game the group advertises. **No sender in qlaunch.** |
 | `0x02` | H→G | high | `{BE u64 application ID, BE u32 size}`: the size of the control data. The guest does not handle it. |
-| `0x04` | H→G | high | The `0x02` layout followed by `size` bytes of control data: the 0x4000-byte NACP (the title name and publisher per language at `0`, the display version at `0x3060`), then the icon, a JPEG. The guest does not handle it. |
+| `0x04` | H→G | high | The `0x02` layout followed by `size` bytes of control data: the 0x4000-byte NACP (the title name and publisher per language at `0`, the display version at `0x3060`), then the icon, a JPEG. The guest does not handle it. A Switch 2 host sends the same layout with a larger icon: 0x35D75 bytes of control data for Let's Go, Pikachu!, more than a Switch's whole 0x1D000 buffer. |
 | `0x05` | G→H | high | **Join**, layout below. |
 | `0x06` | G→H | high | **Leave**, `{u8 kind, 3 zero}`. Kind `1` means the guest will return (a reboot), and the host keeps its node; any other kind drops the node. |
 | `0x07` | H→G | high | **Accept**, `{BE u32 node ID}`. The guest checks only the length. A console gave itself `0x4016b8e8` and pokeldn `0x4016b8e9`: not small integers. |

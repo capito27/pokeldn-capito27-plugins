@@ -430,7 +430,7 @@ def query_control(sock, application_id: int, timeout: float = TIMEOUT) -> c.Appl
     sock.sendall(c.control_query(application_id))
     sock.settimeout(timeout)
     while True:
-        mtype, payload = c.read(sock, limit=0xC + c.CONTROL_DATA_SIZE)
+        mtype, payload = c.read(sock, limit=0xC + c.MAX_CONTROL_DATA)
         if mtype == c.CONTROL_DATA:
             break
         log.debug("ignored lcs message %#04x while querying", mtype)

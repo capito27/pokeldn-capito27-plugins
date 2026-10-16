@@ -33,6 +33,7 @@ NODE_INFO_SIZE = 0x580
 COMPLETED_INFO_SIZE = 0x40
 MAX_DELIVERY_INFOS = 0x10        # the host refuses an application record with more (0x42dc20)
 CONTROL_DATA_SIZE = 0x1D000      # the host's GetApplicationControlData buffer (0x429d68)
+MAX_CONTROL_DATA = 0x100000      # what a guest takes: a Switch 2 host's icon is larger (0x35D75 seen in all)
 NACP_SIZE = 0x4000
 MAX_KEYS = 0x12                  # ns's limit for an application transfer
 TRANSFER_MARK = 0x14             # byte 1 of a system transfer command, bytes 1-2 (04 14) of an

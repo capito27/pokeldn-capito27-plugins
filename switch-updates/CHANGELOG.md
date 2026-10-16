@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Joins a group hosted by a Switch 2. Its reply with the game's name and icon is larger than a Switch's, and
+  1.1.0 refused it.
+
 ## 1.1.0
 
 - First release. Backs up a Switch game's update or its system update from a console, and sends a saved update
