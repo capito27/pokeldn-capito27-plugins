@@ -6,13 +6,13 @@
     {
       "id": "switch-updates",
       "name": "Switch Updates",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "description": "Back up a Switch game's update, or its system update, and send a saved update to another console, through Match Version With Local Users. Needs the ESP32 board and prod.keys.",
       "author": "capito27",
       "api": "1.8",
-      "download": "https://github.com/capito27/pokeldn-capito27-plugins/releases/download/switch-updates-1.1.0/switch-updates-1.1.0.pokeplugin",
-      "sha256": "844553e266db33d04313d0e67557e1c4f3c7f4d6efbb2243bc07f06fd9cc2938",
-      "size": 82473,
+      "download": "https://github.com/capito27/pokeldn-capito27-plugins/releases/download/switch-updates-1.1.1/switch-updates-1.1.1.pokeplugin",
+      "sha256": "f79c8683177afd8cdfb72529d304aef86f70a4b079d4d70ddfb1078ccc4e5d45",
+      "size": 83012,
       "homepage": "https://github.com/capito27/pokeldn-capito27-plugins",
       "icon": "https://raw.githubusercontent.com/capito27/pokeldn-capito27-plugins/main/switch-updates/icon.png"
     }
