@@ -2,7 +2,8 @@ name: Release
 # Tests every plugin folder against a pokeldn release, then, on main, releases each folder's version not yet
 # released: packed and signed with the PLUGIN_SIGNING_KEY secret, as a GitHub release <id>-<version>, and listed
 # in pokeldn-source.json. Raising `version` in a plugin.toml and pushing is a release; a push that leaves the
-# versions alone only tests. tools/publish.sh does the releasing.
+# versions alone only tests. tools/publish.sh does the releasing; the notes are the version's section of the
+# folder's CHANGELOG.md, checked first.
 on:
   push:
     branches: [main]
@@ -37,6 +38,12 @@ jobs:
           else
             set -- $(for manifest in */plugin.toml; do dirname "$manifest"; done)
           fi
+          for folder in "$@"; do
+            version=$(python3 -c "import sys, tomllib; print(tomllib.load(open(sys.argv[1], 'rb'))['version'])" \
+                      "$folder/plugin.toml")
+            [ -n "$(sh tools/changes.sh "$folder" "$version")" ] \
+              || { echo "::error file=$folder/CHANGELOG.md::No '## $version' section: the release notes"; exit 1; }
+          done
           echo "folders=$(printf '%s\n' "$@" | jq -Rsc 'split("\n") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
 
   test:

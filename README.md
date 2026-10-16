@@ -19,12 +19,13 @@ Every package is signed; the install screen shows the key's fingerprint, the sam
 
 ## Publishing a version
 
-Raise `version` in the plugin's `plugin.toml` and push to `main`. The
-[Release](.github/workflows/release.yml) workflow tests every plugin folder against pokeldn on Linux and
-Windows. Then, for each folder whose version has no release yet, it:
+Raise `version` in the plugin's `plugin.toml`, add a `## <version>` section with the changes to the plugin's
+`CHANGELOG.md`, and push to `main`. The [Release](.github/workflows/release.yml) workflow refuses a version
+without that section, then tests every plugin folder against pokeldn on Linux and Windows. Then, for each folder
+whose version has no release yet, it:
 
 - packs the folder, signed with the `PLUGIN_SIGNING_KEY` secret
-- creates the `<id>-<version>` release holding the package
+- creates the `<id>-<version>` release holding the package, with the version's changelog section as its notes
 - commits the new entry and its SHA-256 to `pokeldn-source.json`
 
 Players see the new version once that commit is on `main`. A push that leaves the versions alone only runs the
